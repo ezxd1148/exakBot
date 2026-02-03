@@ -4,7 +4,7 @@
 - [X] Day 1: Define goal + success criteria (what “done” means)
 - [X] Day 2: Break work into tasks + estimate effort
 - [X] Day 3: Set up repo structure (folders, naming, docs skeleton) - Day 1 - 3 : Automated
-- [ ] Day 4: Build baseline / first working version (even ugly)
+- [X] Day 4: Build baseline / first working version (even ugly)
 - [ ] Day 5: Core feature 1 implemented
 - [ ] Day 6: Core feature 2 implemented
 - [ ] Day 7: Review week + fix top 3 problems
