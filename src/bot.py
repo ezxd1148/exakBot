@@ -24,11 +24,33 @@ if not TOKEN:
 
 # main 
 
-async def hello(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    await update.message.reply_text(f'Hello {update.effective_user.first_name}')
+## functions
 
+async def start_bot(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    await update.message.reply_text(
+        '''
+        Welcome to exakbot.
+Paste a link you don’t trust, and I’ll tell you how sketchy it looks.
+
+Send one of these:
+
+A link (example: https://…)
+
+A forwarded message containing a link
+
+I’ll reply with a risk score, the real destination after redirects, and the main red flags.
+If it looks risky, I’ll also tell you what to do next.
+
+Triage only. No “100% safe” promises, because reality doesn’t work like that.
+        '''
+    )
+
+## bot setup
 app = ApplicationBuilder().token(TOKEN).build() # REMINDER TO CHANGE TO ENV (Done)
 
-app.add_handler(CommandHandler("hello", hello))
+### command handlers
 
+app.add_handler(CommandHandler("start", start_bot))
+
+### run bot
 app.run_polling()
