@@ -8,7 +8,9 @@
     - Problem: Bot can only scan 1 link at atime, (Solved)
     - Mini Win: Bot is working good so far
 
-- [ ] Day 5: Core feature 1 implemented
+- [X] Day 5: Core feature 1 implemented
+    - Dont forget to add independent wrapper for URL normalizer
+    - normalizer.py is working as intended
 - [ ] Day 6: Core feature 2 implemented
 - [ ] Day 7: Review week + fix top 3 problems
 

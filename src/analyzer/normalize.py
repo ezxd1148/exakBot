@@ -37,13 +37,17 @@ def normalize_link(url: str) -> str:
         return "False link, hostname missing"
     
     scheme = parsed.scheme.lower()
-    host = parsed.hostname.lower().rstrip('.') # add optional IDNA conversion (idna library)
-    idnahost = idna.encode(host).decode('utf-8')
-    # detect if conversion happens
-    if idnahost != host:
+    host = parsed.hostname.lower().rstrip('.')
+    try: 
+        idnahost = idna.encode(host).decode('utf-8')
+        # detect if conversion happens
+        if idnahost != host:
         # raise flag for punycode usage, in the future add risk scoring rule
-        host = idnahost
+            host = idnahost
 
+    except idna.IDNAError:
+        return "False link, invalid hostname encoding"
+    
     port = parsed.port
 
     # detect if username or password is present in URL
