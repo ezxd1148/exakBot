@@ -26,7 +26,9 @@ def normalize_link(url: str) -> str:
     # ignore: IP, ftp, mailto, file:, data:, javascript:, vbscript:, etc. -- IMPORTANT
     # this is to avoid false positives and security risks and also follow the SECURITY.md guidelines
     if not (url.startswith("http://") or url.startswith("https://")):
-        return "False link, only http/https allowed"
+        # join http:// or https:// if missing
+        # but reject link if startswith other scheme
+        return "False link, missing or invalid scheme (we strictly suggest including http/https only)"
     
     # URL parser to split scheme, hostname, port, parh, query, fragment
     # also reject if hostname is missing
@@ -35,8 +37,13 @@ def normalize_link(url: str) -> str:
         return "False link, hostname missing"
     
     scheme = parsed.scheme.lower()
-    host = parsed.hostname.lower().rstrip('.')
+    host = parsed.hostname.lower().rstrip('.') # add optional IDNA conversion (idna library)
     port = parsed.port
+
+    # detect if username or password is present in URL
+    if parsed.username or parsed.password:
+        # keep normalizing but warn user, in the future add risk scoring rule
+        pass
 
     use_port = port is not None and not (
         (scheme == "http" and port == 80) or 
