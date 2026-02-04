@@ -13,7 +13,7 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Messa
 
 # analyzer imports
 
-# import analyzer.normalize as normalize -- placeholder for actual normalization module
+import analyzer.normalize as normalize # normalize.py
 
 # loads .env from current directory
 
@@ -66,28 +66,28 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return
     
     entities = update.message.entities or []
-    url_candidate = None
+    urls = []
     
     # extract URL from entities
     for entity in entities:
         if entity.type == "text_link":
-            url_candidate = entity.url
-            break
+            urls.append(entity.url)
         if entity.type == "url":
-            url_candidate = update.message.text[entity.offset: entity.offset + entity.length]
-            break
+            urls.append(update.message.text[entity.offset: entity.offset + entity.length])
     
     # check if URL was found
-    if url_candidate is None:
+    if not urls:
         await update.message.reply_text("No valid link found in the message. Please send a valid link.")
         return
-    
+
     await update.message.reply_text("Analyzing the link, please wait...")
-    
-    # normalized_link = normalize.normalize_link(url_candidate) -- placeholder for actual normalization
-    # await update.message.reply_text(normalized_link) -- only after normalize is implemented
-    
-    await update.message.reply_text(f"Received link: {url_candidate}")
+
+    #loop thru all the urls found (usually just one)
+    for url_candidate in urls:
+        await update.message.reply_text(f"Received link: {url_candidate}")
+        normalized_link = normalize.normalize_link(url_candidate) # placeholder for actual normalization
+        await update.message.reply_text(f"Normalized link: {normalized_link}") # only after normalize is implemented
+
     context.user_data['WAITING_FOR_LINK'] = False
 
 ## bot setup

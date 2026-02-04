@@ -5,7 +5,7 @@
 - [X] Day 2: Break work into tasks + estimate effort
 - [X] Day 3: Set up repo structure (folders, naming, docs skeleton) - Day 1 - 3 : Automated
 - [X] Day 4: Build baseline / first working version (even ugly)
-    - Problem: Bot can only scan 1 link at atime, 
+    - Problem: Bot can only scan 1 link at atime, (Solved)
     - Mini Win: Bot is working good so far
 
 - [ ] Day 5: Core feature 1 implemented
