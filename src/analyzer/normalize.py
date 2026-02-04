@@ -1,10 +1,11 @@
 # libraries
 
 from urllib.parse import urlparse, urlunparse
+import idna
 
 def normalize_link(url: str) -> str:
     """
-    This function will normalizes link from bot.py
+    This function will normalizes URL from bot.py
     """
     # remove whitespaces & lowercase whole link
     url = url.strip()
@@ -14,18 +15,17 @@ def normalize_link(url: str) -> str:
     while url and url[0] in wrapper_chars and url[-1] in wrapper_chars:
         url = url[1:-1].strip()
 
-    # strip trailing wrapper independently
+    # strip trailing independently
     # this must include things like = . , ; ! ? :
 
     trailing_chars = '.,;!?:'
     while url and url[-1] in trailing_chars:
         url = url[:-1].strip()
-
     # only allow if link has http or https
     # else ignore the link
     # ignore: IP, ftp, mailto, file:, data:, javascript:, vbscript:, etc. -- IMPORTANT
     # this is to avoid false positives and security risks and also follow the SECURITY.md guidelines
-    if not (url.startswith("http://") or url.startswith("https://")):
+    if not (url.lower().startswith("http://") or url.lower().startswith("https://")):
         # join http:// or https:// if missing
         # but reject link if startswith other scheme
         return "False link, missing or invalid scheme (we strictly suggest including http/https only)"
@@ -38,6 +38,12 @@ def normalize_link(url: str) -> str:
     
     scheme = parsed.scheme.lower()
     host = parsed.hostname.lower().rstrip('.') # add optional IDNA conversion (idna library)
+    idnahost = idna.encode(host).decode('utf-8')
+    # detect if conversion happens
+    if idnahost != host:
+        # raise flag for punycode usage, in the future add risk scoring rule
+        host = idnahost
+
     port = parsed.port
 
     # detect if username or password is present in URL
