@@ -7,9 +7,8 @@ Unrefined Baseline for exakBot.src.bot (Ugly)
 
 # import libraries
 
-import os
 import logging
-from dotenv import load_dotenv
+import config
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
@@ -17,19 +16,14 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Messa
 # analyzer imports
 
 import analyzer.normalize as normalize # normalize.py
-
-# loads .env from current directory
-
-load_dotenv()
-
-## env config
-
-TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
-
-if not TOKEN:
-    raise RuntimeError("Missing TELEGRAM_BOT_TOKEN in Environment Variable")
+import analyzer.resolver as resolver # resolver.py 
+import analyzer.scoring as scoring # scoring.py
+# get token from config (REMINDER TO CHANGE TO ENV)
+TOKEN = config.TELEGRAM_BOT_TOKEN
 
 # main 
+
+results = []
 
 ## logging
 
@@ -59,12 +53,6 @@ Triage only. No “100% safe” promises, because reality doesn’t work like th
         '''
     )
 
-#temporary for testing
-#async def get_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#    context.user_data['WAITING_FOR_LINK'] = True
-#    await update.message.reply_text("Please send me the link you want to analyze.")
-
-
 async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Docstring for separate_url
@@ -76,10 +64,6 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     """
 
-    #temporary for testing
-    #if not context.user_data.get("WAITING_FOR_LINK", False):
-    #    return  # ignore messages if not waiting for a link
-
     if not update.message or not update.message.text:
         return  # ignore non-text messages
     
@@ -89,18 +73,6 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     unique_urls = set(entities.values())
 
     status_msg = await update.message.reply_text(f"Found {len(unique_urls)} link(s)")
-    
-    # extract URL from entities
-    # for entity in entities:
-    #    if entity.type == "text_link":
-    #        urls.append(entity.url)
-    #    if entity.type == "url":
-    #        urls.append(update.message.text[entity.offset: entity.offset + entity.length])
-    
-    # check if URL was found
-    # if not urls:
-    #    await update.message.reply_text("No valid link found in the message. Please send a valid link.")
-    #    return
 
     await update.message.reply_text("Analyzing the link, please wait...")
 
@@ -110,28 +82,30 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     for url_candidate in unique_urls:
         try:
             normalized_link = normalize.normalize_link(url_candidate)
-            # await update.message.reply_text(f"Normalized Link: {normalized_link}") - temporary for testing
             urls.append(normalized_link)
         except ValueError as ve:
             await update.message.reply_text(str(ve))
 
-    # Added summary as of now - temporary for testing
-    summary = "\n".join(urls)
+    # risk scoring here
+    for url in urls:
+        score = scoring.score_url(url)
+        results.append(f"URL: {url}\nRisk Score: {score}/60")
+
+    # Added summary 
+    summary = "\n".join(results)
     await context.bot.edit_message_text(
         chat_id=update.effective_chat.id,
         message_id=status_msg.message_id,
         text=f"Summary:\n{summary}",
         parse_mode=ParseMode.MARKDOWN
     )
-    # context.user_data['WAITING_FOR_LINK'] = False - temporary for testing
 
 ## bot setup
-app = ApplicationBuilder().token(TOKEN).build() # REMINDER TO CHANGE TO ENV (Done)
+app = ApplicationBuilder().token(TOKEN).build()
 
 ### command handlers
 
 app.add_handler(CommandHandler("start", start_bot))
-#app.add_handler(CommandHandler("scan", get_link)) - temporary for testing
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, separate_url))
 
 ### run bot

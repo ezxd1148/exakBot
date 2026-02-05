@@ -11,7 +11,9 @@
 - [X] Day 5: Core feature 1 implemented
     - Dont forget to add independent wrapper for URL normalizer
     - normalizer.py is working as intended
-- [ ] Day 6: Core feature 2 implemented
+- [-] Day 6: Core feature 2 implemented
+    - After implementing both resolver and scoring, the system took too long to respond. IMO, this is bad practice as some inefficiency is present. 
+    - Implement report.py by the end of the week to complete core feature
 - [ ] Day 7: Review week + fix top 3 problems
 
 ### Week 2
