@@ -1,14 +1,22 @@
 # libraries
 
 from urllib.parse import urlparse, urlunparse
+from urlextract import URLExtract
+# maybe in the future use tldextract for better TLD handling
 import idna
 
 def normalize_link(url: str) -> str:
     """
     This function will normalizes URL from bot.py
+
+    goal 5/2 : use urlextract to extract URL from text input 
     """
-    # remove whitespaces & lowercase whole link
-    url = url.strip()
+
+    extract = URLExtract() # initialize extractor
+
+    urls_found = extract.find_urls(url) # this will extract urls from text input
+    if not urls_found:
+        raise ValueError("No valid URL found in the input text.")
 
     # strip wrapper punctuation 
     wrapper_chars = '()[]{}<>"\''
@@ -17,18 +25,17 @@ def normalize_link(url: str) -> str:
 
     # strip trailing independently
     # this must include things like = . , ; ! ? :
-
     trailing_chars = '.,;!?:'
     while url and url[-1] in trailing_chars:
         url = url[:-1].strip()
+
     # only allow if link has http or https
     # else ignore the link
     # ignore: IP, ftp, mailto, file:, data:, javascript:, vbscript:, etc. -- IMPORTANT
     # this is to avoid false positives and security risks and also follow the SECURITY.md guidelines
     if not (url.lower().startswith("http://") or url.lower().startswith("https://")):
-        # join http:// or https:// if missing
-        # but reject link if startswith other scheme
-        return "False link, missing or invalid scheme (we strictly suggest including http/https only)"
+        # UPDATE: changed to put https/http if missing
+        url = "http://" + url
     
     # URL parser to split scheme, hostname, port, parh, query, fragment
     # also reject if hostname is missing
