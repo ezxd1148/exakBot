@@ -2,13 +2,16 @@
 Unrefined Baseline for exakBot.src.bot (Ugly)
 
 - Today's goal: make it work (Done)
+- 5/2 goal: clean up code, modularize, document, also implement logging (In Progress)
 '''
 
 # import libraries
 
 import os
+import logging
 from dotenv import load_dotenv
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
 
 # analyzer imports
@@ -27,6 +30,13 @@ if not TOKEN:
     raise RuntimeError("Missing TELEGRAM_BOT_TOKEN in Environment Variable")
 
 # main 
+
+## logging
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' ,
+    level=logging.INFO
+)
 
 ## functions
 
@@ -49,46 +59,71 @@ Triage only. No “100% safe” promises, because reality doesn’t work like th
         '''
     )
 
-async def get_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    context.user_data['WAITING_FOR_LINK'] = True
-    await update.message.reply_text("Please send me the link you want to analyze.")
+#temporary for testing
+#async def get_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+#    context.user_data['WAITING_FOR_LINK'] = True
+#    await update.message.reply_text("Please send me the link you want to analyze.")
 
 
 async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    if not context.user_data.get("WAITING_FOR_LINK", False):
-        return  # ignore messages if not waiting for a link
+    """
+    Docstring for separate_url
+    
+    :param update: Description
+    :type update: Update
+    :param context: Description
+    :type context: ContextTypes.DEFAULT_TYPE (AI guess)
 
-    if update.message is None:
-        return
+    """
+
+    #temporary for testing
+    #if not context.user_data.get("WAITING_FOR_LINK", False):
+    #    return  # ignore messages if not waiting for a link
+
+    if not update.message or not update.message.text:
+        return  # ignore non-text messages
     
-    if update.message.text is None:
-        await update.message.reply_text("Send a text link (http/https).")
-        return
+    entities = update.message.parse_entities(["url", "text_link"])
     
-    entities = update.message.entities or []
-    urls = []
+    
+    unique_urls = set(entities.values())
+
+    status_msg = await update.message.reply_text(f"Found {len(unique_urls)} link(s)")
     
     # extract URL from entities
-    for entity in entities:
-        if entity.type == "text_link":
-            urls.append(entity.url)
-        if entity.type == "url":
-            urls.append(update.message.text[entity.offset: entity.offset + entity.length])
+    # for entity in entities:
+    #    if entity.type == "text_link":
+    #        urls.append(entity.url)
+    #    if entity.type == "url":
+    #        urls.append(update.message.text[entity.offset: entity.offset + entity.length])
     
     # check if URL was found
-    if not urls:
-        await update.message.reply_text("No valid link found in the message. Please send a valid link.")
-        return
+    # if not urls:
+    #    await update.message.reply_text("No valid link found in the message. Please send a valid link.")
+    #    return
 
     await update.message.reply_text("Analyzing the link, please wait...")
 
-    #loop thru all the urls found (usually just one)
-    for url_candidate in urls:
-        await update.message.reply_text(f"Received link: {url_candidate}")
-        normalized_link = normalize.normalize_link(url_candidate) # placeholder for actual normalization
-        await update.message.reply_text(f"Normalized link: {normalized_link}") # only after normalize is implemented
+    urls = []
 
-    context.user_data['WAITING_FOR_LINK'] = False
+    #loop thru all the urls found (usually just one)
+    for url_candidate in unique_urls:
+        try:
+            normalized_link = normalize.normalize_link(url_candidate)
+            # await update.message.reply_text(f"Normalized Link: {normalized_link}") - temporary for testing
+            urls.append(normalized_link)
+        except ValueError as ve:
+            await update.message.reply_text(str(ve))
+
+    # Added summary as of now - temporary for testing
+    summary = "\n".join(urls)
+    await context.bot.edit_message_text(
+        chat_id=update.effective_chat.id,
+        message_id=status_msg.message_id,
+        text=f"Summary:\n{summary}",
+        parse_mode=ParseMode.MARKDOWN
+    )
+    # context.user_data['WAITING_FOR_LINK'] = False - temporary for testing
 
 ## bot setup
 app = ApplicationBuilder().token(TOKEN).build() # REMINDER TO CHANGE TO ENV (Done)
@@ -96,7 +131,7 @@ app = ApplicationBuilder().token(TOKEN).build() # REMINDER TO CHANGE TO ENV (Don
 ### command handlers
 
 app.add_handler(CommandHandler("start", start_bot))
-app.add_handler(CommandHandler("scan", get_link))
+#app.add_handler(CommandHandler("scan", get_link)) - temporary for testing
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, separate_url))
 
 ### run bot

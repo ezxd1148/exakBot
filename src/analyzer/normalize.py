@@ -9,7 +9,7 @@ def normalize_link(url: str) -> str:
     """
     This function will normalizes URL from bot.py
 
-    goal 5/2 : use urlextract to extract URL from text input 
+    goal 5/2 : use urlextract to extract URL from text input (done)
     """
 
     extract = URLExtract() # initialize extractor
