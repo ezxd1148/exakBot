@@ -2,6 +2,8 @@
 
 from urllib.parse import urlparse, urlunparse
 from urlextract import URLExtract
+import ipaddress
+
 # maybe in the future use tldextract for better TLD handling
 import idna
 
@@ -32,10 +34,21 @@ def normalize_link(url: str) -> str:
     # only allow if link has http or https
     # else ignore the link
     # ignore: IP, ftp, mailto, file:, data:, javascript:, vbscript:, etc. -- IMPORTANT
+
+    # detect if URL is IP address
+    parsed_ip = urlparse(url)
+    hostname_ip = parsed_ip.hostname
+    if hostname_ip:
+        try:
+            ipaddress.ip_address(hostname_ip)
+            raise ValueError("Enter a valid URL, IP address detected.")
+        except ValueError:
+            pass 
+
     # this is to avoid false positives and security risks and also follow the SECURITY.md guidelines
     if not (url.lower().startswith("http://") or url.lower().startswith("https://")):
-        # UPDATE: changed to put https/http if missing
-        url = "http://" + url
+        # UPDATE: strictly require scheme
+        raise ValueError("Only HTTP and HTTPS URLs are allowed.")
     
     # URL parser to split scheme, hostname, port, parh, query, fragment
     # also reject if hostname is missing

@@ -1,36 +1,81 @@
 """
-    This module is responsible for redirect resolution and safety checks.
+This module is responsible for redirect resolution and safety checks.
+
+rewrote entire code for better error handling and added functions to check for suspicious TLDs,
+keywords, and URL shorteners.
+
+
 """
 
-# Standard Library Imports
+# Library imports
+import requests
 import tldextract
-import config
+
+# Local imports
+import config 
+
+def get_final_url(url: str) -> dict:
+    """
+    follow redirect safely in config.
+    """
+    chain = []
+    headers = {'User-Agent': config.USER_AGENT}
+
+    try:
+        # prevent hanging
+        response = requests.head(
+            url, 
+            allow_redirects=True, 
+            timeout=config.REQUEST_TIMEOUT, 
+            headers=headers
+        )
+        
+        # track redirect 
+        if response.history:
+            for resp in response.history:
+                chain.append(resp.url)
+        
+        return {
+            "original_url": url,
+            "final_url": response.url,
+            "chain": chain,
+            "status_code": response.status_code,
+            "error": None
+        }
+
+    except requests.Timeout:
+        return {"error": "Timeout reached", "final_url": url, "chain": chain}
+    except Exception as e:
+        return {"error": str(e), "final_url": url, "chain": chain}
 
 def is_suspicious_tld(tld: str) -> bool:
     """
-    Check if the given TLD is in the list of suspicious TLDs.
+    check if there are any suspicious tlds
     """
-     
-    if tld.lower() in config.SUSPICIOUS_TLDS:
-        return True
-    return False
+    return tld.lower() in config.SUSPICIOUS_TLDS
 
 def contains_suspicious_keyword(url: str) -> bool:
     """
-    Check if the URL contains any suspicious keywords.
+    check if there contains any suspicious keywords.
     """
     url_lower = url.lower()
-    for keyword in config.SUSPICIOUS_KEYWORDS:
-        if keyword in url_lower:
-            return True
-    return False
+    return any(keyword in url_lower for keyword in config.SUSPICIOUS_KEYWORDS)
 
 def is_url_shortened(url: str) -> bool:
     """
-    Check if the URL is from a known URL shortener service.
+    check if URL is shortened
     """
-    extracted = tldextract.extract(url)
-    domain = f"{extracted.domain}.{extracted.suffix}"
-    if domain.lower() in config.URL_SHORTENERS:
+    try:
+        extracted = tldextract.extract(url)
+        domain = f"{extracted.domain}.{extracted.suffix}"
+        return domain.lower() in config.URL_SHORTENERS
+    except Exception:
+        return False
+    
+def check_if_https(url: str) -> bool:
+    """
+     check if URL uses HTTPS else raise flag
+    """
+
+    if not url.lower().startswith("https://"):
         return True
-    return False

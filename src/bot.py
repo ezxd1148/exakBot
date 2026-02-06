@@ -9,6 +9,7 @@ Unrefined Baseline for exakBot.src.bot (Ugly)
 
 import logging
 import config
+import html
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
@@ -16,7 +17,6 @@ from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, Messa
 # analyzer imports
 
 import analyzer.normalize as normalize # normalize.py
-import analyzer.resolver as resolver # resolver.py 
 import analyzer.scoring as scoring # scoring.py
 # get token from config (REMINDER TO CHANGE TO ENV)
 TOKEN = config.TELEGRAM_BOT_TOKEN
@@ -31,6 +31,8 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s' ,
     level=logging.INFO
 )
+
+logger = logging.getLogger(__name__)
 
 ## functions
 
@@ -68,7 +70,8 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         return  # ignore non-text messages
     
     entities = update.message.parse_entities(["url", "text_link"])
-    
+    if not entities:
+        return
     
     unique_urls = set(entities.values())
 
@@ -76,28 +79,45 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     await update.message.reply_text("Analyzing the link, please wait...")
 
-    urls = []
+    results = []
 
-    #loop thru all the urls found (usually just one)
     for url_candidate in unique_urls:
         try:
             normalized_link = normalize.normalize_link(url_candidate)
-            urls.append(normalized_link)
-        except ValueError as ve:
-            await update.message.reply_text(str(ve))
+            
+            score, reasons, risk_level = scoring.score_url(normalized_link)
 
-    # risk scoring here
-    for url in urls:
-        score = scoring.score_url(url)
-        results.append(f"URL: {url}\nRisk Score: {score}/60")
+            safe_url = html.escape(normalized_link)
+            safe_level = html.escape(risk_level)
+            safe_reasons = [html.escape(r) for r in reasons]
+            safe_reasons_str = ", ".join(safe_reasons)
+
+            entry = (
+                f"<b>URL:</b> <code>{safe_url}</code>\n"
+                f"<b>Risk Score:</b> {score}/100\n"
+                f"<b>Risk Level:</b> {safe_level}\n"
+                f"<b>Messages:</b> {safe_reasons_str}"
+            )
+            results.append(entry)
+
+        except ValueError as ve:
+            safe_err = html.escape(str(ve))
+            results.append(f"Skipped: {safe_err}")
+        except Exception as e:
+            logger.error(f"Error scanning {url_candidate}: {e}")
+            safe_err = html.escape(str(e))
+            results.append(f"Error while analyzing: {safe_err}")
+
 
     # Added summary 
-    summary = "\n".join(results)
+    summary = "<b>Summary:</b>\n\n" + "\n\n".join(results)
+
     await context.bot.edit_message_text(
         chat_id=update.effective_chat.id,
         message_id=status_msg.message_id,
-        text=f"Summary:\n{summary}",
-        parse_mode=ParseMode.MARKDOWN
+        text=summary[:4096],
+        parse_mode=ParseMode.HTML,
+        disable_web_page_preview=True
     )
 
 ## bot setup

@@ -23,6 +23,9 @@ if not TELEGRAM_BOT_TOKEN:
 # resolver.py
 # this is used for risk scoring and flag detection
 
+## timeout for requests in seconds
+REQUEST_TIMEOUT = 5
+
 ## high risk TLDs used for phshing
 SUSPICIOUS_TLDS = {
     'xyz', 'top', 'gq', 'cn', 'zip', 'mov', 'link', 'click', 
@@ -35,7 +38,7 @@ SUSPICIOUS_KEYWORDS = [
     'login', 'verify', 'update', 'secure', 'account', 
     'banking', 'password', 'signin', 'confirm', 'ebayisapi',
     'webscr', 'paypal', 'cmd', 'service', 'support', 
-    'billing', 'wp-admin', 'admin', 'user', 'client', 'auth', 'unlock'
+    'billing', 'wp-admin', 'admin', 'user', 'client', 'auth', 'unlock', '@'
 ]
 
 ## common URL shortener domains
@@ -44,3 +47,6 @@ URL_SHORTENERS = [
     'buff.ly', 'adf.ly', 'bit.do', 'cutt.ly', 'is.gd', 
     'soo.gd', 's2r.co', 'clicky.me', 'shorturl.at'
 ]
+
+## user agent for requests
+USER_AGENT = "ExakBot/1.0 (Security Triage Bot) + github.com/ezxd1148/exakBot"

@@ -9,12 +9,12 @@
     - Mini Win: Bot is working good so far
 
 - [X] Day 5: Core feature 1 implemented
-    - Dont forget to add independent wrapper for URL normalizer
+    - Dont forget to add independent wrapper for URL normalizer (Solved using URLExtract)
     - normalizer.py is working as intended
-- [-] Day 6: Core feature 2 implemented
+- [X] Day 6: Core feature 2 implemented
     - After implementing both resolver and scoring, the system took too long to respond. IMO, this is bad practice as some inefficiency is present. 
     - Implement report.py by the end of the week to complete core feature
-- [ ] Day 7: Review week + fix top 3 problems
+- [-] Day 7: Review week + fix top 3 problems
 
 ### Week 2
 - [ ] Day 8: Add logging/monitoring (or basic debugging helpers)
