@@ -1,6 +1,9 @@
 # Python virtual environment
 venv/
 src/.env
+src/secret.key
+.venv/
+.zig-cache/
 __pycache__/
 *.pyc
 docs/LIBRARIES.md
