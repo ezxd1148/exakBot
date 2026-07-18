@@ -19,6 +19,7 @@ def normalize_link(url: str) -> str:
     urls_found = extract.find_urls(url) # this will extract urls from text input
     if not urls_found:
         raise ValueError("No valid URL found in the input text.")
+    url = urls_found[0].strip()
 
     # strip wrapper punctuation 
     wrapper_chars = '()[]{}<>"\''
@@ -41,9 +42,10 @@ def normalize_link(url: str) -> str:
     if hostname_ip:
         try:
             ipaddress.ip_address(hostname_ip)
-            raise ValueError("Enter a valid URL, IP address detected.")
         except ValueError:
-            pass 
+            pass
+        else:
+            raise ValueError("Enter a valid URL, IP address detected.")
 
     # this is to avoid false positives and security risks and also follow the SECURITY.md guidelines
     if not (url.lower().startswith("http://") or url.lower().startswith("https://")):
@@ -54,7 +56,7 @@ def normalize_link(url: str) -> str:
     # also reject if hostname is missing
     parsed = urlparse(url)
     if not parsed.hostname:
-        return "False link, hostname missing"
+        raise ValueError("False link, hostname missing")
     
     scheme = parsed.scheme.lower()
     host = parsed.hostname.lower().rstrip('.')
@@ -66,7 +68,7 @@ def normalize_link(url: str) -> str:
             host = idnahost
 
     except idna.IDNAError:
-        return "False link, invalid hostname encoding"
+        raise ValueError("False link, invalid hostname encoding")
     
     port = parsed.port
 
