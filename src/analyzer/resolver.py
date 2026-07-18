@@ -10,9 +10,28 @@ keywords, and URL shorteners.
 # Library imports
 import requests
 import tldextract
+from urllib.parse import urlparse
 
 # Local imports
 import config 
+
+
+def get_url_parts(url: str) -> dict:
+    """
+    parse and return reusable URL parts for analyzer modules.
+    """
+    parsed = urlparse(url)
+    hostname = parsed.hostname or ""
+    tld = hostname.split('.')[-1] if '.' in hostname else ''
+    extracted = tldextract.extract(url)
+    registered_domain = f"{extracted.domain}.{extracted.suffix}" if extracted.suffix else extracted.domain
+
+    return {
+        "scheme": parsed.scheme.lower(),
+        "hostname": hostname.lower(),
+        "tld": tld.lower(),
+        "registered_domain": registered_domain.lower()
+    }
 
 def get_final_url(url: str) -> dict:
     """
@@ -66,16 +85,21 @@ def is_url_shortened(url: str) -> bool:
     check if URL is shortened
     """
     try:
-        extracted = tldextract.extract(url)
-        domain = f"{extracted.domain}.{extracted.suffix}"
-        return domain.lower() in config.URL_SHORTENERS
+        parts = get_url_parts(url)
+        return parts["registered_domain"] in config.URL_SHORTENERS
     except Exception:
         return False
     
-def check_if_https(url: str) -> bool:
+def uses_https(url: str) -> bool:
     """
-     check if URL uses HTTPS else raise flag
+    check if URL uses HTTPS.
     """
+    parts = get_url_parts(url)
+    return parts["scheme"] == "https"
 
-    if not url.lower().startswith("https://"):
-        return True
+def has_punycode(url: str) -> bool:
+    """
+    check if hostname contains punycode marker.
+    """
+    parts = get_url_parts(url)
+    return 'xn--' in parts["hostname"]

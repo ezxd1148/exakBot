@@ -11,7 +11,6 @@ risk score should be 0 to 100
 # imports analyzer modules
 
 import analyzer.resolver as resolver
-from urllib.parse import urlparse
 
 #main scoring function
 
@@ -28,12 +27,11 @@ def score_url(url: str) -> int:
     score = 0
     risk_level = None
 
+    parts = resolver.get_url_parts(url)
+
     # Check for suspicious TLDs
-    extracted = urlparse(url)
-    hostname = extracted.hostname or ""
-    tld = hostname.split('.')[-1] if '.' in hostname else ''
-    if resolver.is_suspicious_tld(tld):
-        final_message.append(f"Suspicious TLD detected: {tld}")
+    if resolver.is_suspicious_tld(parts["tld"]):
+        final_message.append(f"Suspicious TLD detected: {parts['tld']}")
         score += 25 # high risk for suspicious TLDs
 
     # Check for suspicious keywords
@@ -59,13 +57,13 @@ def score_url(url: str) -> int:
         final_message.append(f"Final URL after redirects: {resolution['final_url']}, Number of hops: {len(resolution['chain'])}")
 
     # check if https
-    if not extracted.scheme.lower() == "https":
+    if not resolver.uses_https(url):
         final_message.append("URL does not use HTTPS")
         score += 30
          # moderate risk for non-HTTPS URLs
 
     # check if punycode is present
-    if 'xn--' in hostname:
+    if resolver.has_punycode(url):
         final_message.append("Punycode detected in hostname")
         score += 20
     
