@@ -33,6 +33,23 @@ def get_url_parts(url: str) -> dict:
         "registered_domain": registered_domain.lower()
     }
 
+
+def analyze_url_signals(url: str) -> dict:
+    """
+    evaluate reusable URL-level risk signals in a single pass.
+    """
+    parts = get_url_parts(url)
+    url_lower = url.lower()
+
+    return {
+        "parts": parts,
+        "suspicious_tld": parts["tld"] in config.SUSPICIOUS_TLDS,
+        "suspicious_keyword": any(keyword in url_lower for keyword in config.SUSPICIOUS_KEYWORDS),
+        "shortener_domain": parts["registered_domain"] in config.URL_SHORTENERS,
+        "uses_https": parts["scheme"] == "https",
+        "has_punycode": 'xn--' in parts["hostname"],
+    }
+
 def get_final_url(url: str) -> dict:
     """
     follow redirect safely in config.
