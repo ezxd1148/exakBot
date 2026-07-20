@@ -10,6 +10,8 @@ Unrefined Baseline for exakBot.src.bot (Ugly)
 import logging
 import config
 import html
+import json
+import asyncio
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes, MessageHandler, filters
@@ -122,11 +124,46 @@ async def separate_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
 ## bot setup
 app = ApplicationBuilder().token(TOKEN).build()
+_app_bootstrap_lock = asyncio.Lock()
+_app_bootstrapped = False
 
 ### command handlers
 
 app.add_handler(CommandHandler("start", start_bot))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, separate_url))
 
-### run bot
-app.run_polling()
+async def bootstrap_application() -> None:
+    global _app_bootstrapped
+
+    if _app_bootstrapped:
+        return
+
+    async with _app_bootstrap_lock:
+        if _app_bootstrapped:
+            return
+
+        await app.initialize()
+        await app.start()
+        _app_bootstrapped = True
+
+async def setup_webhook() -> None:
+    await bootstrap_application()
+
+    webhook_secret = config.TELEGRAM_WEBHOOK_SECRET or None
+    await app.bot.set_webhook(
+        url=config.TELEGRAM_WEBHOOK_URL,
+        secret_token=webhook_secret
+    )
+
+async def process_webhook_update(update_payload: str | bytes | dict) -> None:
+    await bootstrap_application()
+
+    if isinstance(update_payload, bytes):
+        payload = json.loads(update_payload.decode("utf-8"))
+    elif isinstance(update_payload, str):
+        payload = json.loads(update_payload)
+    else:
+        payload = update_payload
+
+    update = Update.de_json(payload, app.bot)
+    await app.process_update(update)

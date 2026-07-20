@@ -15,10 +15,15 @@ load_dotenv()
 
 # get telegram bot token from env
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_WEBHOOK_URL = os.getenv("TELEGRAM_WEBHOOK_URL")
+TELEGRAM_WEBHOOK_SECRET = os.getenv("TELEGRAM_WEBHOOK_SECRET")
 
 ## check if token is missing
 if not TELEGRAM_BOT_TOKEN:
     raise RuntimeError("Missing TELEGRAM_BOT_TOKEN in Environment Variable")
+
+if not TELEGRAM_WEBHOOK_URL:
+    raise RuntimeError("Missing TELEGRAM_WEBHOOK_URL in Environment Variable")
 
 # resolver.py
 # this is used for risk scoring and flag detection

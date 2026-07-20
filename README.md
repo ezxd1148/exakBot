@@ -146,6 +146,23 @@ See `PRIVACY.md` for details.
 
 ---
 
+## Webhook deployment (Azure Function App)
+
+`src/bot.py` is webhook-first and exposes two async helpers for serverless hosting:
+
+- `setup_webhook()` → registers your Telegram webhook URL
+- `process_webhook_update(update_payload)` → processes the incoming Telegram webhook JSON body
+
+Set these environment variables in your Function App:
+
+- `TELEGRAM_BOT_TOKEN`
+- `TELEGRAM_WEBHOOK_URL`
+- `TELEGRAM_WEBHOOK_SECRET` (optional but recommended)
+
+Your HTTP-triggered Azure Function should pass the request body into `process_webhook_update(...)`.
+
+---
+
 ## Configuration
 
 ExakBot is configured primarily via environment variables (see `.env.example`).
@@ -218,4 +235,3 @@ Built as a practical cybersecurity project focused on:
 - explainable triage,
 - safe network behavior,
 - and real-world usability for everyday users.
-
